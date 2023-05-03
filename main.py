@@ -31,3 +31,66 @@ AGING_C = 1          # energy lost each month for Carviz
 GROWING = 1          # Vegetob density that grows per day.
 
 
+import random
+
+NUMCELLS = 10
+
+NUMDAYS = 100
+
+class Cell:
+    def __init__(self, x, y, terrain):
+        self.x = x
+        self.y = y
+        self.terrain = terrain
+        self.vegetob_density = 0
+        self.erbast_list = []
+        self.carviz_list = []
+        self.neighborhood = []
+
+    def add_erbast(self, erbast):
+        self.erbast_list.append(erbast)
+
+    def add_carviz(self, carviz):
+        self.carviz_list.append(carviz)
+
+class Vegetob:
+    def __init__(self, density):
+        self.density = density
+
+class Erbast:
+    def __init__(self, energy, lifetime, social_attitude):
+        self.energy = energy
+        self.lifetime = lifetime
+        self.age = 0
+        self.social_attitude = social_attitude
+
+    def update_age(self):
+        self.age += 1
+
+class Carviz:
+    def __init__(self, energy, lifetime, social_attitude):
+        self.energy = energy
+        self.lifetime = lifetime
+
+
+grid = [[None for _ in range(NUMCELLS)] for _ in range(NUMCELLS)]
+
+for i in range(NUMCELLS):
+    for j in range(NUMCELLS):
+        if i == 0 or j == 0 or i == NUMCELLS-1 or j == NUMCELLS-1:
+            grid[i][j] = "water"
+        else:
+            if random.random() < 0.5:
+                grid[i][j] = "ground"
+            else:
+                grid[i][j] = "water"
+
+def update_grid():
+    # TODO: implement the logic for updating the grid based on the movement and behavior of the species
+    pass
+
+# Run the simulation for NUMDAYS days
+for day in range(NUMDAYS):
+    update_grid()
+
+# TODO: analyze the results of the simulation and plot any necessary graphs or charts
