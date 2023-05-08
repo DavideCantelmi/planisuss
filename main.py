@@ -48,9 +48,9 @@ class Vegetob:
         return self.density
 
 class Erbast:
-    def __init__(self, energy, lifetime, social_attitude):
+    def __init__(self, lifetime, social_attitude, energy = MAX_ENERGY_E):
         self.energy = energy
-        self.lifetime = lifetime
+        self.lifetime = lifetime if lifetime < MAX_LIFE_E else MAX_LIFE_E
         self.age = 0
         self.social_attitude = social_attitude
         self.neighborhood = NEIGHBORHOOD
@@ -101,9 +101,9 @@ class Erbast:
 class Carviz:
     NEIGHBORHOOD = 5
 
-    def __init__(self, energy, lifetime, social_attitude):
-        self.energy = energy
-        self.lifetime = lifetime
+    def __init__(self, lifetime, social_attitude, energy = MAX_ENERGY_E):
+        self.energy = energy if energy < MAX_ENERGY_E else MAX_ENERGY_E
+        self.lifetime = lifetime if lifetime < MAX_LIFE_E else MAX_LIFE_E
         self.age = 0
         self.social_attitude = social_attitude
 
@@ -143,3 +143,35 @@ class Carviz:
         if pride_attitude >= self.social_attitude:
             return True
         return False
+
+class Planisuss:
+    def simulate(self):
+        for day in range(NUMDAYS):
+            self.grow()
+            self.move()
+            self.graze()
+            self.struggle()
+            self.spawn()
+
+    def grow(self):
+        for cell in self.cells:
+            cell.grow()
+
+    def move(self):
+        for cell in self.cells:
+            cell.move()
+    
+    def graze(self):
+        for cell in self.cells:
+            cell.graze()
+    
+
+    def struggle(self):
+        for cell in self.cells:
+            cell.struggle()
+    
+
+    def spawn(self):
+        for cell in self.cells:
+            cell.spawn()
+
