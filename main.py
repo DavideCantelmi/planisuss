@@ -31,6 +31,8 @@ AGING_C = 1          # energy lost each month for Carviz
 GROWING = 1          # Vegetob density that grows per day.
 
 
+import numpy as np
+import matplotlib.pyplot as plt
 
 class Vegetob:
     def __init__(self, density):
@@ -173,5 +175,141 @@ class Planisuss:
 
     def spawn(self):
         for cell in self.cells:
-            cell.spawn()
+            cell.spawn()          
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Generate random data for demonstration
+simulation_time = np.arange(0, 100)  # Simulation time (e.g., days)
+carviz_population = np.random.randint(0, MAX_HERD, size=len(simulation_time))
+erbast_population = np.random.randint(0, MAX_PRIDE, size=len(simulation_time))
+vegetob_density = np.random.randint(0, 100, size=len(simulation_time))
+
+# Logging variables
+population_log = []
+grid_log = []
+individual_log = []
+
+# Define the map_image variable with appropriate dimensions and values
+map_image = np.zeros((100, 100))  # Example: 100x100 grid with initial values of 0
+
+# Generate random movement data for demonstration
+movement_data = [
+    ('Carviz', [(10, 10), (20, 20), (30, 30), (40, 40)]),
+    ('Erbast', [(90, 90), (80, 80), (70, 70), (60, 60)])
+]
+
+# Plotting trajectories on the map
+fig, axes = plt.subplots(1, 1, figsize=(8, 8))
+
+# Plot map_image
+axes.imshow(map_image, cmap='Blues')
+axes.set_title('Map')
+
+# Plot movement trajectories
+for species, trajectory in movement_data:
+    x, y = zip(*trajectory)
+    axes.plot(y, x, label=species)
+
+axes.legend()
+axes.set_xlabel('X')
+axes.set_ylabel('Y')
+axes.set_xlim(0, 100)
+axes.set_ylim(0, 100)
+axes.set_aspect('equal')
+plt.show()
+
+# Run simulation
+for t in simulation_time:
+    population_log.append((carviz_population[t], erbast_population[t]))
+    grid_log.append(map_image.copy())
+
+    individual_data = {}  # Placeholder for individual data at each time step
+    individual_log.append(individual_data)
+
+plt.plot(simulation_time, [p[0] for p in population_log], label='Carviz')
+plt.plot(simulation_time, [p[1] for p in population_log], label='Erbast')
+plt.xlabel('Time (days)')
+plt.ylabel('Numerosity')
+plt.legend()
+plt.title('Numerosity of Carviz and Erbast over Time (Replay)')
+plt.show()
+plt.scatter([p[0] for p in population_log], [p[1] for p in population_log])
+plt.xlabel('Carviz Numerosity')
+plt.ylabel('Erbast Numerosity')
+plt.title('Numerosity of Carviz vs. Erbast (Replay)')
+plt.show()
+fig, axes = plt.subplots(2, 1, figsize=(8, 10))
+
+axes[0].imshow(map_image, cmap='Blues')
+for movement in movement_data:
+    species, trajectory = movement
+    x, y = zip(*trajectory)
+    axes[0].plot(y, x, label=species)
+axes[0].legend()
+axes[0].set_title('Trajectories on Map')
+
+axes[1].plot(simulation_time, carviz_population + erbast_population, label='Population')
+axes[1].plot(simulation_time, np.mean([carviz_population, erbast_population], axis=0), label='Average Population')
+axes[1].set_xlabel('Time')
+axes[1].set_ylabel('Population')
+axes[1].legend()
+axes[1].set_title('Population of Cell and Average Population')
+grid_log = []
+for t in simulation_time:
+    grid_log.append(map_image.copy())
+individual_log = []
+for t in simulation_time:
+    individual_data = {}  
+    individual_log.append(individual_data)
+
+fig, axes = plt.subplots(2, 1, figsize=(8, 10))
+
+axes[0].imshow(grid_log[0], cmap='Blues')
+axes[0].set_title('Initial Grid')
+
+# Replay grid-level information
+for i, grid in enumerate(grid_log[1:], start=1):
+    axes[1].clear()
+    axes[1].imshow(grid, cmap='Blues')
+    axes[1].set_title(f'Grid at Time {simulation_time[i]}')
+    plt.pause(0.1)  # Pause between frames to visualize the evolution
+
+for individual_data in individual_log:
+
+    plt.pause(0.1)  
+
+import pickle
+
+# Save simulation state
+simulation_state = {
+    'simulation_time': simulation_time,
+    'carviz_population': carviz_population,
+    'erbast_population': erbast_population,
+    'vegetob_density': vegetob_density,
+}
+
+with open('simulation_state.pkl', 'wb') as file:
+    pickle.dump(simulation_state, file)
+
+# Load simulation state
+with open('simulation_state.pkl', 'rb') as file:
+    loaded_state = pickle.load(file)
+
+# Assign loaded state to variables
+simulation_time = loaded_state['simulation_time']
+carviz_population = loaded_state['carviz_population']
+erbast_population = loaded_state['erbast_population']
+vegetob_density = loaded_state['vegetob_density']
+# Assign other variables or parameters from the loaded state
+
+# Adjust simulation parameters based on user interaction or input
+# Modify variables or parameters according to user input or GUI interactions
+
+# Run the simulation with updated parameters
+
+
+
 
