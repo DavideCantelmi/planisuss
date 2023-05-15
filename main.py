@@ -303,12 +303,6 @@ simulation_time = loaded_state['simulation_time']
 carviz_population = loaded_state['carviz_population']
 erbast_population = loaded_state['erbast_population']
 vegetob_density = loaded_state['vegetob_density']
-# Assign other variables or parameters from the loaded state
-
-# Adjust simulation parameters based on user interaction or input
-# Modify variables or parameters according to user input or GUI interactions
-
-# Run the simulation with updated parameters
 
 
 
