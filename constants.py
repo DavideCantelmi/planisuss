@@ -30,3 +30,5 @@ AGING_C = 1          # energy lost each month for Carviz
 
 GROWING = 1          
 HUNGER = 1  
+
+WATER_CHANCE = 0.1   # probability of a cell to be water

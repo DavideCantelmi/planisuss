@@ -9,9 +9,10 @@ the simulation can be terminated after a predefined number of days, NUMDAYS.
 
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from constants import *
+from src.vegetob.vegetob import Vegetob
 
 types = ["water","ground"]
 
@@ -20,3 +21,6 @@ class Cell:
         self.x = x
         self.y = y
         self.type = type
+        self.vegetob = Vegetob(0)
+        self.herd = []
+        self.pride = []

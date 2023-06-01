@@ -1,6 +1,6 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from constants import *
 
@@ -17,6 +17,7 @@ class Erbast:
             raise ValueError("socialAttitude must be between 0 and 1")
         self.socialAttitude = socialAttitude 
         self.living = True
+        self.hasMoved = False
     
     def __str__(self):
         return f"Erbast: energy:{self.energy}, lifetime:{self.lifetime}, age:{self.age}, socialAttitude:{self.socialAttitude}"
