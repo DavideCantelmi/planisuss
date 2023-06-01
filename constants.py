@@ -1,9 +1,9 @@
 ### Game constants
 
-NUMDAYS = 10  # Length of the simulation in days
+NUMDAYS = 10 # Length of the simulation in days
 
 # geometry
-NUMCELLS = 10     # size of the (square) grid (NUMCELLS x NUMCELLS)
+NUMCELLS = 20  # size of the (square) grid (NUMCELLS x NUMCELLS)
 NUMCELLS_R = 100    # number of rows of the (potentially non-square) grid
 NUMCELLS_C = 100    # number of columns of the (potentially non-square) grid
 

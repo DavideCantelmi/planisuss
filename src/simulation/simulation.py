@@ -231,42 +231,48 @@ class Simulation():
     
     def spawning(self):
         for row in self.grid.cells:
+            print("entro nel for")
             for cell in row:
+                print("entro nel for 2")
                 for herd in cell.herds:
-                    for erbast in herd:
-                        erbast.age += 1
-                        if erbast.age % 10 == 0:
-                            erbast.energy -= AGING
-
-                        if erbast.age >= erbast.lifetime:
+                    print("entro nel for 3")
+                    for erbast in range(len(herd)):
+                        print("entro nel for 4")
+                        herd[erbast].age += 1
+                        if herd[erbast].age % 10 == 0:
+                            herd[erbast].energy -= AGING
+                        if herd[erbast].age >= herd[erbast].lifetime:
                             if len(cell.herds) < MAX_HERD or MAX_HERD is None:
-                                offspring_energy = erbast.energy
+                                offspring_energy = herd[erbast].energy
 
                                 for _ in range(2):
+                                    print("entro nel for 5")
                                     offspring_age = 0
                                     offspring_energy_share = offspring_energy // 2
-                                    offspring_lifetime = 2*erbast.lifetime if erbast.lifetime <= MAX_LIFE_E // 2 else MAX_LIFE_E
-                                    offspring_social_attitude = 2*erbast.socialAttitude if erbast.socialAttitude <= 0.5 else 1
+                                    offspring_lifetime = 2*herd[erbast].lifetime if herd[erbast].lifetime <= MAX_LIFE_E // 2 else MAX_LIFE_E
+                                    offspring_social_attitude = 2*herd[erbast].socialAttitude if herd[erbast].socialAttitude <= 0.5 else 1
                                     offspring = Erbast(offspring_energy_share, offspring_lifetime, offspring_age, offspring_social_attitude)
                                     cell.herds[0].append(offspring)
 
                 for pride in cell.prides:
-                    for carviz in pride:
-                        carviz.age += 1
-                        if carviz.age % 10 == 0:
-                            carviz.energy -= AGING
-
-                        if carviz.age >= carviz.lifetime:
+                    print("entro nel for 6")
+                    for carviz in range(len(pride)):
+                        print("entro nel for 7")
+                        pride[carviz].age += 1
+                        if pride[carviz].age % 10 == 0:
+                            pride[carviz].energy -= AGING
+                        if pride[carviz].age >= pride[carviz].lifetime:
                             if len(cell.prides) < MAX_PRIDE or MAX_PRIDE is None:
-                                offspring_energy = carviz.energy
+                                offspring_energy = pride[carviz].energy
 
                                 for _ in range(2):
+                                    print("entro nel for 8")
                                     offspring_age = 0
                                     offspring_energy_share = offspring_energy // 2
-                                    offspring_lifetime = 2*erbast.lifetime if erbast.lifetime <= MAX_LIFE_C // 2 else MAX_LIFE_C
-                                    offspring_social_attitude = 2*erbast.socialAttitude if erbast.socialAttitude <= 0.5 else 1
-                                    offspring = Erbast(offspring_energy_share, offspring_lifetime, offspring_age, offspring_social_attitude)
-                                    cell.herds[0].append(offspring)
+                                    offspring_lifetime = 2*pride[carviz].lifetime if pride[carviz].lifetime <= MAX_LIFE_C // 2 else MAX_LIFE_C
+                                    offspring_social_attitude = 2*pride[carviz].socialAttitude if pride[carviz].socialAttitude <= 0.5 else 1
+                                    offspring = Carviz(offspring_energy_share, offspring_lifetime, offspring_age, offspring_social_attitude)
+                                    cell.prides[0].append(offspring)
 
     def populateMapWithErbastAndCarviz(self, erbast_prob, carviz_prob):
         for row in self.grid.cells:
@@ -301,18 +307,55 @@ class Simulation():
         for day in range(NUMDAYS):
             print(f"Day {day}")
             self.growing()
+            print("Growing done")
             self.move()
+            print("Move done")
             self.grazing()
+            print("Grazing done")
             self.struggle()
+            print("Struggle done")
             self.spawning()
+            print("Spawning done")
             self.day += 1
             self.gridStatuses.append(self.grid)
 
-        self.plot_evolution()
+        self.plot_terrain()
 
     import matplotlib.pyplot as plt
 
     import matplotlib.pyplot as plt
+
+    def plot_terrain(self):
+        grid = self.grid
+        
+        fig, ax = plt.subplots()
+        
+        for row in grid.cells:
+            for cell in row:
+                x = cell.x
+                y = cell.y
+
+                if cell.type == "ground":
+                    color = "brown"
+                else:
+                    color = "blue"
+
+                rect = plt.Rectangle((x, y), 1, 1, facecolor=color)
+                ax.add_patch(rect)
+
+        ax.set_xlim(0, len(grid.cells))
+        ax.set_ylim(0, len(grid.cells[0]))
+        ax.set_aspect('equal')
+        ax.set_title("Terrain Disposition between Water and Ground")
+        ax.legend(handles=[plt.Rectangle((0, 0), 1, 1, facecolor='blue'), plt.Rectangle((0, 0), 1, 1, facecolor='brown')],
+              labels=['Water', 'Ground'], loc='upper right')
+        ax.set_xticks(range(len(grid.cells) + 1))
+        ax.set_yticks(range(len(grid.cells[0])+ 1))
+        ax.grid(True)
+        
+        plt.tight_layout()
+        plt.show()
+        
 
     def plot_evolution(self):
         grids = self.gridStatuses

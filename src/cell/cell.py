@@ -21,7 +21,7 @@ class Cell:
         self.x = x
         self.y = y
         self.type = type
-        self.vegetob = Vegetob(100)
+        self.vegetob = Vegetob(0)
         self.herds = []
         self.prides = []
 
