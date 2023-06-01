@@ -24,7 +24,8 @@ class Erbast:
     
     def ageUp(self):
         self.age += 1
-        if self.age > self.lifetime:
+        self.energy -= AGING_E
+        if self.age > self.lifetime or self.energy <= 0:
             self.living = False
     
     def isLiving(self):

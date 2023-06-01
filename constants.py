@@ -1,6 +1,6 @@
 ### Game constants
 
-NUMDAYS = 100000     # Length of the simulation in days
+NUMDAYS = 10  # Length of the simulation in days
 
 # geometry
 NUMCELLS = 10     # size of the (square) grid (NUMCELLS x NUMCELLS)
@@ -32,3 +32,5 @@ GROWING = 1
 HUNGER = 1  
 
 WATER_CHANCE = 0.1   # probability of a cell to be water
+THRESHOLD_C = 20    # threshold of energy for Carviz to move
+THRESHOLD_E = 20    # threshold of energy for Erbast to move

@@ -1,19 +1,7 @@
-"""
-The time on Planisuss is structured in units called day. A day is articulated in the following phases:
-Growing Vegetob grow everywhere of a fixed quantity (GROWING).
-Movement The individuals of animal species (Erbast and Carviz) decide if move in another
-area. Movement is articulated as individual and social group (herd or pride) movement. Grazing Erbast which did not move, 
-can graze the Vegetob in the area.
-Struggle Carviz insisting on the same area can fight or hunt.
-Spawning Individuals of animal species can generate their offspring.
-Conventionally, long periods of time on Planisuss are measured in months, years, decades and centuries, 
-where a month is 10 days long, a year is 10 months long, a decade is 10 years long, and a century is 10 decades long.
-"""
-
-
-
 import os
 import sys
+import matplotlib.pyplot as plt
+import random
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -23,135 +11,342 @@ from src.cell.cell import Cell
 from src.erbast.erbast import Erbast
 from src.carviz.carviz import Carviz
 from src.vegetob.vegetob import Vegetob
-from random import randint, random
 from math import sqrt
 
 class Simulation():
     def __init__(self):
         self.day = 0
         self.grid = Grid()
+        self.gridStatuses = []
 
     def __str__(self):
         return f"Simulation: day:{self.day}, grid:{self.grid}"
     
     def giveSomeCellsWater(self):
-        for cell in self.grid.cells:
-            if cell.type == "ground" and random() < WATER_CHANCE:
-                cell.type = "water"
+        for row in self.grid.cells:
+            for cell in row:
+                if cell.type == "ground" and random.random() < WATER_CHANCE:
+                    cell.type = "water"
 
     
-    """
-    The Vegetob density is increased by GROWING. If a cell is completely surrounded by cells having the maximum Vegetob density, 
-    the animals present in the cell are overwhelmed by the Vegetob and terminated.
-    """
 
     def growing(self):
-        for cell in self.grid.cells:
-            if cell.type == "ground":
-                cell.vegetob.density += GROWING
-                if cell.vegetob > 100:
-                    cell.vegetob.density = 100
-            else:
-                cell.vegetob = 0
+        for row in self.grid.cells:
+            for cell in row:
+                if cell.type == "ground":
+                    cell.vegetob.density += GROWING
+                    if cell.vegetob.density > 100:
+                        cell.vegetob.density = 100
+                else:
+                    cell.vegetob = 0
 
-    """
-    In the Movement phase, individuals and social groups evaluate the possibility to move in another cell. Based on suitable rules, the most appealing cell in the neighborhood is identified. The evaluation is carried on first by social group basis (herd and pride).
-    All the Erbast in a cell at the beginning of the day form a herd. Similarly, all the Carviz 
-    in a cell constitute a pride. Social groups can have memories and strategies: 
-    proper values can be stored and used in the evaluation and planning. 
-    For instance, they can be provided with the coordinate of the last cell visited to avoid to move back, or the density of nutrients of cells visible in previous days.
-    Once the herd and the pride of the cell made a decision (stay or move), the individuals can choose if they will follow the social group or made a different decision, splitting by the social group.
-    Splitting decision can be formed considering the properties of the individual (e.g., the herd will move, while the individual having a low value of energy may stay; or, on the contrary,
-    the herd will stay, but strong Erbast may want to move, due to the lack of Vegetob in the cell) 
-    and is weighted with the social attitude of the individual.
-    Movements take place for all the cells at the same time and are instantaneous. 
-    The movement costs to each individual one point of Energy.
-    Not everyone moves: the individuals that do not move can graze the Vegetob in the cell.
-    """
     def move(self):
-        for cell in self.grid.cells:
-            if cell.type == "ground":
-                if len(cell.herd) > 0:
-                    for erbast in cell.herd:
-                        if erbast.energy > 0:
-                            if erbast.hasMoved:
-                                continue
-                            else:
-                                # evaluate the most appealing cell in the neighborhood
-                                neighbors = self.grid.getNeighbors(cell.x, cell.y)
-                                bestCell = None
-                                bestCellValue = -1
-                                for neighbor in neighbors:
-                                    if neighbor.vegetob.density > bestCellValue:
-                                        bestCell = neighbor
-                                        bestCellValue = neighbor.vegetob.density
-                                if bestCellValue > cell.vegetob.density:
-                                    # move
-                                    bestCell.herd.append(erbast)
-                                    cell.herd.remove(erbast)
+        for row in self.grid.cells:
+            for cell in row:
+                if cell.type == "ground":
+                    # Form herds and prides
+                    herds = cell.herds
+                    prides = cell.prides
+                    herdToMove = []
+                    prideToMove = []
+                    # Evaluate the most appealing cell in the neighborhood
+                    neighbors = self.grid.getNeighbors(cell.x, cell.y)
+                    bestCell = None
+                    bestCellValue = -1
+                    for neighbor in neighbors:
+                        if neighbor.vegetob != 0:
+                            if neighbor.vegetob.density > bestCellValue:
+                                bestCell = neighbor
+                                bestCellValue = neighbor.vegetob.density
+                    for herd in herds:
+                        for erbast in herd:
+                            if erbast.energy > 0:
+                                if erbast.hasMoved:
+                                    continue
+                                else:
+                                    # Individual decision-making
+                                    if erbast.energy < THRESHOLD_E:  # Individual with low energy stays and can graze
+                                        self.graze(erbast, cell)
+                                        erbast.hasMoved = False
+                                        continue
+                                    elif bestCellValue > cell.vegetob.density:  # Herd moves to the best cell
+                                        if erbast.socialAttitude >= random.random():  # Individual follows the herd's decision
+                                            herdToMove.append(erbast)
+                                            herd.remove(erbast)
+                                            erbast.hasMoved = True
+                                            erbast.energy -= 1
+                                            if erbast.energy < 0:
+                                                herd.remove(erbast)
+                                            continue
+                                    # Individual decision to stay
                                     erbast.hasMoved = True
                                     erbast.energy -= 1
                                     if erbast.energy < 0:
-                                        cell.herd.remove(erbast)
+                                        herd.remove(erbast)
+                                        herdToMove.remove(erbast)
+                                    continue
+                    for pride in prides: 
+                        for carviz in pride:
+                            if carviz.energy > 0:
+                                if carviz.hasMoved:
                                     continue
                                 else:
-                                    # stay
-                                    erbast.hasMoved = True
-                                    erbast.energy -= 1
-                                    if erbast.energy < 0:
-                                        cell.herd.remove(erbast)
-                                    continue
-                if len(cell.pride) > 0:
-                    for carviz in cell.pride:
-                        if carviz.energy > 0:
-                            if carviz.hasMoved:
-                                continue
-                            else:
-                                # evaluate the most appealing cell in the neighborhood
-                                neighbors = self.grid.getNeighbors(cell.x, cell.y)
-                                bestCell = None
-                                bestCellValue = -1
-                                for neighbor in neighbors:
-                                    if neighbor.vegetob.density > bestCellValue:
-                                        bestCell = neighbor
-                                        bestCellValue = neighbor.vegetob.density
-                                if bestCellValue > cell.vegetob.density:
-                                    # move
-                                    bestCell.pride.append(carviz)
-                                    cell.pride.remove(carviz)
+                                    # Individual decision-making
+                                    if carviz.energy < THRESHOLD_C:
+                                        carviz.hasMoved = False
+                                        continue
+                                    elif bestCellValue > cell.vegetob.density: 
+                                        if carviz.social_attitude >= random.random():
+                                            prideToMove.append(carviz)
+                                            pride.remove(carviz)
+                                            carviz.hasMoved = True
+                                            carviz.energy -= 1
+                                            if carviz.energy < 0:
+                                                pride.remove(carviz)
+                                            continue
                                     carviz.hasMoved = True
                                     carviz.energy -= 1
                                     if carviz.energy < 0:
-                                        cell.pride.remove(carviz)
+                                        pride.remove(carviz)
+                                        prideToMove.remove(carviz)
                                     continue
-                                else:
-                                    # stay
-                                    carviz.hasMoved = True
-                                    carviz.energy -= 1
-                                    if carviz.energy < 0:
-                                        cell.pride.remove(carviz)
-                                    continue
-            else:
-                continue
+
+                    bestCell.herds.append(herdToMove)
+                    bestCell.prides.append(prideToMove)
+
+
+
     
-    """
-    The Erbast that did not move, can graze to increment their Energy. The grazing decreases the Vegetob density of the cell. 
-    Every Erbast can have 1 point of Energy for 1 point of Vegetob density. 
-    If the Vegetob density is lower than the number of Erbast, 1 point is assigned to those Erbast having the lowest value of Energy, 
-    up to exhaustion of the Vegetob of the cell.
-    Optionally, the Social attitude of those individuals that did not eat (due to lack of Vegetob) can be decreased.
-    """
+
+    def graze(self, erbast, cell):
+        if cell.vegetob.density > 0:
+            erbast.energy += 1
+            cell.vegetob.density -= 1
+            if cell.vegetob.density < 0:
+                cell.vegetob.density = 0
+        else:
+            erbast.socialAttitude -= 0.1
+            if erbast.socialAttitude < 0:
+                erbast.socialAttitude = 0
 
     def grazing(self):
-        for cell in self.grid.cells:
-            if cell.type == "ground":
-                if len(cell.herd) > 0:
-                    for erbast in cell.herd:
-                        if erbast.energy > 0 and not erbast.hasMoved:
-                            if cell.vegetob.density > 0:
-                                erbast.energy += 1
-                                cell.vegetob.density -= 1
-                            else:
-                                erbast.energy -= 1
-                                if erbast.energy < 0:
-                                    cell.herd.remove(erbast)
+        for row in self.grid.cells:
+            for cell in row:
+                if cell.type == "ground":
+                    for herd in cell.herds:
+                        for erbast in herd:
+                            if not erbast.hasMoved:
+                                self.graze(erbast, cell)
+        
+
+    def reorganize_social_groups(self):
+        for row in self.grid.cells:
+            for cell in row:
+                if len(cell.herds) > 1:
+                    merged_herd = []
+                    for herd in cell.herds:
+                        merged_herd.extend(herd)
+                    cell.herds = [merged_herd]
+
+                if len(cell.prides) > 1:
+                    if sum(carviz.socialAttitude for carviz in cell.prides[0]) < 10 or sum(carviz.socialAttitude for carviz in cell.prides[1]) < 10:
+                        winningPride = self.fight_between_prides(cell.prides[0], cell.prides[1])
+                        cell.prides = [winningPride]
+                    else:
+                        merged_pride = []
+                        for pride in cell.prides:
+                            merged_pride.extend(pride)
+                        cell.prides = [merged_pride]
+
+    def increase_social_attitude(self, pride):
+        for carviz in pride:
+            carviz.socialAttitude += 0.1
+            if carviz.socialAttitude > 1:
+                carviz.socialAttitude = 1
+
+    def decrease_social_attitude(self, pride):
+        for carviz in pride:
+            carviz.socialAttitude -= 0.1
+            if carviz.socialAttitude < 0:
+                carviz.socialAttitude = 0
+
+    def fight_between_prides(self, pride1, pride2):
+        total_energy_pride1 = sum(carviz.energy for carviz in pride1)
+        total_energy_pride2 = sum(carviz.energy for carviz in pride2)
+        total_energy = total_energy_pride1 + total_energy_pride2
+
+        rand_num = random.random()  # Draw a random number
+        probability_pride1 = total_energy_pride1 / total_energy
+        if rand_num <= probability_pride1:
+            self.increase_social_attitude(pride1)  
+            self.decrease_social_attitude(pride2)  
+            return pride1
+        else:
+            # Pride 2 wins
+            self.increase_social_attitude(pride2)  
+            self.decrease_social_attitude(pride1)  
+            return pride2
+        
+    def hunt_by_pride(self, pride, erbast):
+        total_energy_pride = sum(carviz.energy for carviz in pride)
+        rand_num = random.random() 
+        probability_success = total_energy_pride / (total_energy_pride + erbast.energy)
+
+        if rand_num <= probability_success:
+            prey_energy = erbast.energy
+            prey_energy_share = prey_energy // len(pride)
+            spare_energy = prey_energy % len(pride)  
+
+            for carviz in pride:
+                carviz.energy += prey_energy_share
+            lowest_energy_carviz = min(pride, key=lambda x: x.energy)
+            lowest_energy_carviz.energy += spare_energy
+
+            self.increase_social_attitude(pride) 
+        else:
+            self.decrease_social_attitude(pride) 
+
+    def chooseStrongestErbast(self, herd):
+        strongestErbast = None
+        strongestErbastEnergy = -1
+        for erbast in herd:
+            if erbast.energy > strongestErbastEnergy:
+                strongestErbast = erbast
+                strongestErbastEnergy = erbast.energy
+        return strongestErbast  
+    
+    def struggle(self):
+        for row in self.grid.cells:
+            for cell in row:
+                self.reorganize_social_groups()
+
+                if len(cell.prides) > 1:
+                    self.fight_between_prides(cell.prides[0], cell.prides[1])
+                elif (len(cell.prides) == 1) and (len(cell.herds) == 1):
+                    strongestErbast = self.chooseStrongestErbast(cell.herds[0])
+                    self.hunt_by_pride(cell.prides[0], strongestErbast)
+                else:
+                    continue
+
+    
+    def spawning(self):
+        for row in self.grid.cells:
+            for cell in row:
+                for herd in cell.herds:
+                    for erbast in herd:
+                        erbast.age += 1
+                        if erbast.age % 10 == 0:
+                            erbast.energy -= AGING
+
+                        if erbast.age >= erbast.lifetime:
+                            if len(cell.herds) < MAX_HERD or MAX_HERD is None:
+                                offspring_energy = erbast.energy
+
+                                for _ in range(2):
+                                    offspring_age = 0
+                                    offspring_energy_share = offspring_energy // 2
+                                    offspring_lifetime = 2*erbast.lifetime if erbast.lifetime <= MAX_LIFE_E // 2 else MAX_LIFE_E
+                                    offspring_social_attitude = 2*erbast.socialAttitude if erbast.socialAttitude <= 0.5 else 1
+                                    offspring = Erbast(offspring_energy_share, offspring_lifetime, offspring_age, offspring_social_attitude)
+                                    cell.herds[0].append(offspring)
+
+                for pride in cell.prides:
+                    for carviz in pride:
+                        carviz.age += 1
+                        if carviz.age % 10 == 0:
+                            carviz.energy -= AGING
+
+                        if carviz.age >= carviz.lifetime:
+                            if len(cell.prides) < MAX_PRIDE or MAX_PRIDE is None:
+                                offspring_energy = carviz.energy
+
+                                for _ in range(2):
+                                    offspring_age = 0
+                                    offspring_energy_share = offspring_energy // 2
+                                    offspring_lifetime = 2*erbast.lifetime if erbast.lifetime <= MAX_LIFE_C // 2 else MAX_LIFE_C
+                                    offspring_social_attitude = 2*erbast.socialAttitude if erbast.socialAttitude <= 0.5 else 1
+                                    offspring = Erbast(offspring_energy_share, offspring_lifetime, offspring_age, offspring_social_attitude)
+                                    cell.herds[0].append(offspring)
+
+    def populateMapWithErbastAndCarviz(self, erbast_prob, carviz_prob):
+        for row in self.grid.cells:
+            for cell in row:
+                if cell.type == "ground":
+                    # Populate with Erbast
+                    for _ in range(MAX_HERD):
+                        if random.random() <= erbast_prob:
+                            age = 0
+                            energy = MAX_ENERGY_E
+                            social_attitude = random.random()
+                            lifetime = random.randint(0, MAX_LIFE_E)
+                            erbast = Erbast(energy, lifetime, age, social_attitude)
+                            cell.herds.append([erbast])
+
+                    for _ in range(MAX_PRIDE):
+                        if random.random() <= carviz_prob:
+                            age = 0
+                            energy = MAX_ENERGY
+                            lifetime = random.randint(0, MAX_LIFE_C)
+                            social_attitude = random.random()
+                            carviz = Carviz(energy, lifetime, age, social_attitude)
+                            cell.prides.append([carviz])
+
+    
+
+
+    def start(self):
+        self.giveSomeCellsWater()
+        self.populateMapWithErbastAndCarviz(0.5, 0.5)
+        self.gridStatuses = [self.grid]
+        for day in range(NUMDAYS):
+            print(f"Day {day}")
+            self.growing()
+            self.move()
+            self.grazing()
+            self.struggle()
+            self.spawning()
+            self.day += 1
+            self.gridStatuses.append(self.grid)
+
+        self.plot_evolution()
+
+    import matplotlib.pyplot as plt
+
+    import matplotlib.pyplot as plt
+
+    def plot_evolution(self):
+        grids = self.gridStatuses
+        num_days = len(grids)
+        num_cols = int(sqrt(num_days)) + 1
+        num_rows = int(num_days / num_cols) + 1
+
+        fig, axs = plt.subplots(num_rows, num_cols, figsize=(12, 8))
+
+        for i, grid in enumerate(grids):
+            ax = axs[i // num_cols, i % num_cols]
+            ax.set_title(f"Day {i}")
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+            ax.cla()  # Clear the current axis
+
+            for row in grid.cells:
+                for cell in row:
+                    x = cell.x
+                    y = cell.y
+
+                    if cell.type == "ground":
+                        color = "brown"
+                    else:
+                        color = "blue"
+
+                    ax.add_patch(plt.Rectangle((x, y), 1, 1, facecolor=color))
+
+            ax.set_xlim(0, len(grid.cells[0])) 
+            ax.set_ylim(0, len(grid.cells))  
+
+        for j in range(num_days, num_rows * num_cols):
+            axs[j // num_cols, j % num_cols].axis("off")
+
+        plt.tight_layout()
+        plt.show()

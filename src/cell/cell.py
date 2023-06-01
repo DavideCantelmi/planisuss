@@ -21,6 +21,9 @@ class Cell:
         self.x = x
         self.y = y
         self.type = type
-        self.vegetob = Vegetob(0)
-        self.herd = []
-        self.pride = []
+        self.vegetob = Vegetob(100)
+        self.herds = []
+        self.prides = []
+
+    def __str__(self):
+        return f"Cell: x:{self.x}, y:{self.y}, type:{self.type}, vegetob:{self.vegetob}, herds:{self.herds}, prides:{self.prides}"
