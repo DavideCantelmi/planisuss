@@ -1,4 +1,4 @@
-# PLANSISUSS project
+# PLANISUSS project
 This is a project for the course of Software Engineering.
 The project is about a simulation in Wa-Tor Style.
 The project is developed in Python.
