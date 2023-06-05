@@ -1,6 +1,6 @@
 ### Game constants
 
-NUMDAYS = 15 # Length of the simulation in days
+NUMDAYS = 100 # Length of the simulation in days
 
 # geometry
 NUMCELLS = 20  # size of the (square) grid (NUMCELLS x NUMCELLS)
@@ -12,8 +12,8 @@ NEIGHBORHOOD = 1     # radius of the region that a social group can evaluate to 
 NEIGHBORHOOD_E = 1   # radius of the region that a herd can evaluate to decide the movement
 NEIGHBORHOOD_C = 1   #  radius of the region that a pride can evaluate to decide the movement
 
-MAX_HERD = 100      # maximum numerosity of a herd
-MAX_PRIDE = 100      # maximum numerosity of a pride
+MAX_HERD = 50  # maximum numerosity of a herd
+MAX_PRIDE = 50   # maximum numerosity of a pride
 
 # individuals
 MAX_ENERGY = 100     # maximum value of Energy
@@ -28,7 +28,7 @@ AGING = 1            # energy lost each month
 AGING_E = 1          # energy lost each month for Erbast
 AGING_C = 1          # energy lost each month for Carviz
 
-GROWING = 1        
+GROWING = 3    
 HUNGER = 1  
 
 WATER_CHANCE = 0.1   # probability of a cell to be water

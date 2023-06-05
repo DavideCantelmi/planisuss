@@ -1,4 +1,5 @@
 import os
+import copy
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,17 +34,22 @@ class Simulation():
     
 
     def growing(self):
+        new_grid = []
         for row in self.grid.cells:
+            new_row = []
             for cell in row:
                 if cell.type == "ground":
                     cell.vegetob.density += GROWING
                     if cell.vegetob.density > 100:
                         cell.vegetob.density = 100
-                else:
-                    cell.vegetob = 0
+                new_row.append(cell)
+            new_grid.append(new_row)
+        self.grid.cells = copy.deepcopy(new_grid)
 
     def move(self):
+        updated_cells = []
         for row in self.grid.cells:
+            updated_row = []
             for cell in row:
                 if cell.type == "ground":
                     # Form herds and prides
@@ -113,19 +119,21 @@ class Simulation():
                                         prideToMove.remove(carviz)
                                     continue
 
-                    bestCell.herds.append(herdToMove)
-                    bestCell.prides.append(prideToMove)
+                    bestCell.herds.extend(herdToMove)
+                    bestCell.prides.extend(prideToMove)
+                
+                updated_row.append(cell) 
+            updated_cells.append(updated_row)  
+        self.grid.cells = copy.deepcopy(updated_cells) 
 
-
-
-    
 
     def graze(self, erbast, cell):
-        if cell.vegetob.density > 0:
-            erbast.energy += 1
-            cell.vegetob.density -= 1
-            if cell.vegetob.density < 0:
-                cell.vegetob.density = 0
+        if isinstance(cell, Cell) and isinstance(cell.vegetob, Vegetob):  # Check if cell and vegetob exist
+            if cell.vegetob.density > 0:
+                erbast.energy += 1
+                cell.vegetob.density -= 1
+                if cell.vegetob.density < 0:
+                    cell.vegetob.density = 0
         else:
             erbast.socialAttitude -= 0.1
             if erbast.socialAttitude < 0:
@@ -139,6 +147,8 @@ class Simulation():
                         for erbast in herd:
                             if not erbast.hasMoved:
                                 self.graze(erbast, cell)
+                                cell.herds.remove(herd)
+                                cell.herds.append(herd)
         
 
     def reorganize_social_groups(self):
@@ -233,13 +243,9 @@ class Simulation():
     
     def spawning(self):
         for row in self.grid.cells:
-            print("entro nel for")
             for cell in row:
-                print("entro nel for 2")
                 for herd in cell.herds:
-                    print("entro nel for 3")
                     for erbast in range(len(herd)):
-                        print("entro nel for 4")
                         herd[erbast].age += 1
                         if herd[erbast].age % 10 == 0:
                             herd[erbast].energy -= AGING
@@ -248,18 +254,15 @@ class Simulation():
                                 offspring_energy = herd[erbast].energy
 
                                 for _ in range(2):
-                                    print("entro nel for 5")
                                     offspring_age = 0
                                     offspring_energy_share = offspring_energy // 2
-                                    offspring_lifetime = 2*herd[erbast].lifetime if herd[erbast].lifetime <= MAX_LIFE_E // 2 else MAX_LIFE_E
-                                    offspring_social_attitude = 2*herd[erbast].socialAttitude if herd[erbast].socialAttitude <= 0.5 else 1
+                                    offspring_lifetime = 2 * herd[erbast].lifetime if herd[erbast].lifetime <= MAX_LIFE_E // 2 else MAX_LIFE_E
+                                    offspring_social_attitude = 2 * herd[erbast].socialAttitude if herd[erbast].socialAttitude <= 0.5 else 1
                                     offspring = Erbast(offspring_energy_share, offspring_lifetime, offspring_age, offspring_social_attitude)
                                     cell.herds[0].append(offspring)
 
                 for pride in cell.prides:
-                    print("entro nel for 6")
                     for carviz in range(len(pride)):
-                        print("entro nel for 7")
                         pride[carviz].age += 1
                         if pride[carviz].age % 10 == 0:
                             pride[carviz].energy -= AGING
@@ -268,11 +271,10 @@ class Simulation():
                                 offspring_energy = pride[carviz].energy
 
                                 for _ in range(2):
-                                    print("entro nel for 8")
                                     offspring_age = 0
                                     offspring_energy_share = offspring_energy // 2
-                                    offspring_lifetime = 2*pride[carviz].lifetime if pride[carviz].lifetime <= MAX_LIFE_C // 2 else MAX_LIFE_C
-                                    offspring_social_attitude = 2*pride[carviz].socialAttitude if pride[carviz].socialAttitude <= 0.5 else 1
+                                    offspring_lifetime = 2 * pride[carviz].lifetime if pride[carviz].lifetime <= MAX_LIFE_C // 2 else MAX_LIFE_C
+                                    offspring_social_attitude = 2 * pride[carviz].socialAttitude if pride[carviz].socialAttitude <= 0.5 else 1
                                     offspring = Carviz(offspring_energy_share, offspring_lifetime, offspring_age, offspring_social_attitude)
                                     cell.prides[0].append(offspring)
 
@@ -293,7 +295,7 @@ class Simulation():
                     for _ in range(MAX_PRIDE):
                         if random.random() <= carviz_prob:
                             age = 0
-                            energy = MAX_ENERGY
+                            energy = MAX_ENERGY_C
                             lifetime = random.randint(0, MAX_LIFE_C)
                             social_attitude = random.random()
                             carviz = Carviz(energy, lifetime, age, social_attitude)
@@ -304,8 +306,9 @@ class Simulation():
 
     def start(self):
         self.giveSomeCellsWater()
-        self.populateMapWithErbastAndCarviz(0.5, 0.5)
+        self.populateMapWithErbastAndCarviz(0.1, 0.9)
         self.gridStatuses = [self.grid]
+        changes = []
         for day in range(NUMDAYS):
             print(f"Day {day}")
             self.growing()
@@ -319,7 +322,10 @@ class Simulation():
             self.spawning()
             print("Spawning done")
             self.day += 1
-            self.gridStatuses.append(self.grid)
+            changes.append(self.grid.cells.copy())
+            self.gridStatuses.append(copy.deepcopy(self.grid))
+            
+        print(self.gridStatuses)
 
         self.plot_terrain()
         self.vegetobDensityPlot()
@@ -380,7 +386,11 @@ class Simulation():
             im.set_array(density_grid)
             ax.set_title(f'Vegetob Density Map (Day {frame})')
 
-        anim = FuncAnimation(fig, update, frames=len(gridStatuses), interval=500, repeat=False)
+        def init():
+            im.set_array(density_grid)
+            return im,
+
+        anim = FuncAnimation(fig, update, frames=len(gridStatuses), init_func=init, interval=500, repeat=False)
         plt.show()
 
     def plotAverageCarvizErbastPopulation(self):
@@ -433,7 +443,9 @@ class Simulation():
             
             erbast_total_population.append(erbast_population)
             carviz_total_population.append(carviz_population)
-
+        
+        print(erbast_total_population)
+        print(carviz_total_population)
         fig, ax = plt.subplots()
         ax.scatter(days, erbast_total_population, c='green', label='Erbast')
         ax.scatter(days, carviz_total_population, c='red', label='Carviz')
