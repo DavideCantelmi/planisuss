@@ -24,6 +24,10 @@ class Cell:
         self.vegetob = Vegetob(0)
         self.herds = []
         self.prides = []
+        self.colors = {}
+        self.colors["R"] = 0
+        self.colors["G"] = 0
+        self.colors["B"] = 0
 
     def __str__(self):
         return f"Cell: x:{self.x}, y:{self.y}, type:{self.type}, vegetob:{self.vegetob}, herds:{self.herds}, prides:{self.prides}"
