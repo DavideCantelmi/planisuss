@@ -1,6 +1,8 @@
 import os
 import sys
+import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 import random
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -96,7 +98,7 @@ class Simulation():
                                         carviz.hasMoved = False
                                         continue
                                     elif bestCellValue > cell.vegetob.density: 
-                                        if carviz.social_attitude >= random.random():
+                                        if carviz.socialAttitude >= random.random():
                                             prideToMove.append(carviz)
                                             pride.remove(carviz)
                                             carviz.hasMoved = True
@@ -242,7 +244,7 @@ class Simulation():
                         if herd[erbast].age % 10 == 0:
                             herd[erbast].energy -= AGING
                         if herd[erbast].age >= herd[erbast].lifetime:
-                            if len(cell.herds) < MAX_HERD or MAX_HERD is None:
+                            if len(cell.herds[0]) < MAX_HERD or MAX_HERD is None:
                                 offspring_energy = herd[erbast].energy
 
                                 for _ in range(2):
@@ -262,7 +264,7 @@ class Simulation():
                         if pride[carviz].age % 10 == 0:
                             pride[carviz].energy -= AGING
                         if pride[carviz].age >= pride[carviz].lifetime:
-                            if len(cell.prides) < MAX_PRIDE or MAX_PRIDE is None:
+                            if len(cell.prides[0]) < MAX_PRIDE or MAX_PRIDE is None:
                                 offspring_energy = pride[carviz].energy
 
                                 for _ in range(2):
@@ -320,10 +322,9 @@ class Simulation():
             self.gridStatuses.append(self.grid)
 
         self.plot_terrain()
-
-    import matplotlib.pyplot as plt
-
-    import matplotlib.pyplot as plt
+        self.vegetobDensityPlot()
+        self.plotAverageCarvizErbastPopulation()
+        self.plotPopulationScatter()
 
     def plot_terrain(self):
         grid = self.grid
@@ -355,41 +356,91 @@ class Simulation():
         
         plt.tight_layout()
         plt.show()
+
+    def vegetobDensityPlot(self):
+        gridStatuses = self.gridStatuses
+        fig, ax = plt.subplots(figsize=(6, 6))
+        cmap = plt.cm.get_cmap('Greens')
+        density_grid = np.zeros((len(gridStatuses[0].cells), len(gridStatuses[0].cells[0])), dtype=float)
+        im = ax.imshow(density_grid, cmap=cmap, vmin=0, vmax=100)
+        ax.set_title('Vegetob Density Map')
+        ax.axis('off')
+        cbar = fig.colorbar(im)
+        cbar.set_label('Density')
+
+        def update(frame):
+            nonlocal density_grid
+            for i in range(len(gridStatuses[frame].cells)):
+                for j in range(len(gridStatuses[frame].cells[i])):
+                    cell = gridStatuses[frame].cells[i][j]
+                    if isinstance(cell, Cell) and isinstance(cell.vegetob, Vegetob):
+                        density_grid[i, j] = cell.vegetob.density
+                    else:
+                        density_grid[i, j] = 0
+            im.set_array(density_grid)
+            ax.set_title(f'Vegetob Density Map (Day {frame})')
+
+        anim = FuncAnimation(fig, update, frames=len(gridStatuses), interval=500, repeat=False)
+        plt.show()
+
+    def plotAverageCarvizErbastPopulation(self):
+        gridStatuses = self.gridStatuses
+        days = range(len(gridStatuses))
+        erbast = []
+        carviz = []
         
+        for grid in gridStatuses:
+            erbast_count = 0
+            carviz_count = 0
+            
+            for row in grid.cells:
+                for cell in row:
+                    if cell.type == "ground":
+                        for herd in cell.herds:
+                            erbast_count += len(herd)
+                        for pride in cell.prides:
+                            carviz_count += len(pride)
+            
+            erbast.append(erbast_count)
+            carviz.append(carviz_count)
+        
+        fig, ax = plt.subplots()
+        ax.plot(days, erbast, label='Erbast')
+        ax.plot(days, carviz, label='Carviz')
 
-    def plot_evolution(self):
-        grids = self.gridStatuses
-        num_days = len(grids)
-        num_cols = int(sqrt(num_days)) + 1
-        num_rows = int(num_days / num_cols) + 1
+        ax.set(xlabel='Days', ylabel='Population',
+            title='Population over time')
+        ax.grid()
+        ax.legend()
 
-        fig, axs = plt.subplots(num_rows, num_cols, figsize=(12, 8))
+        plt.show()
+    
+    def plotPopulationScatter(self):
+        gridStatuses = self.gridStatuses
+        days = range(len(gridStatuses))
+        erbast_total_population = []
+        carviz_total_population = []
 
-        for i, grid in enumerate(grids):
-            ax = axs[i // num_cols, i % num_cols]
-            ax.set_title(f"Day {i}")
-            ax.set_xticks([])
-            ax.set_yticks([])
-
-            ax.cla()  # Clear the current axis
+        for grid in gridStatuses:
+            erbast_population = 0
+            carviz_population = 0
 
             for row in grid.cells:
                 for cell in row:
-                    x = cell.x
-                    y = cell.y
-
                     if cell.type == "ground":
-                        color = "brown"
-                    else:
-                        color = "blue"
+                        erbast_population += sum(len(herd) for herd in cell.herds)
+                        carviz_population += sum(len(pride) for pride in cell.prides)
+            
+            erbast_total_population.append(erbast_population)
+            carviz_total_population.append(carviz_population)
 
-                    ax.add_patch(plt.Rectangle((x, y), 1, 1, facecolor=color))
+        fig, ax = plt.subplots()
+        ax.scatter(days, erbast_total_population, c='green', label='Erbast')
+        ax.scatter(days, carviz_total_population, c='red', label='Carviz')
 
-            ax.set_xlim(0, len(grid.cells[0])) 
-            ax.set_ylim(0, len(grid.cells))  
+        ax.set(xlabel='Days', ylabel='Total Population',
+            title='Total Population Scatter Plot')
+        ax.grid()
+        ax.legend()
 
-        for j in range(num_days, num_rows * num_cols):
-            axs[j // num_cols, j % num_cols].axis("off")
-
-        plt.tight_layout()
         plt.show()

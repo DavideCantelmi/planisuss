@@ -1,6 +1,6 @@
 ### Game constants
 
-NUMDAYS = 10 # Length of the simulation in days
+NUMDAYS = 15 # Length of the simulation in days
 
 # geometry
 NUMCELLS = 20  # size of the (square) grid (NUMCELLS x NUMCELLS)
@@ -28,7 +28,7 @@ AGING = 1            # energy lost each month
 AGING_E = 1          # energy lost each month for Erbast
 AGING_C = 1          # energy lost each month for Carviz
 
-GROWING = 1          
+GROWING = 1        
 HUNGER = 1  
 
 WATER_CHANCE = 0.1   # probability of a cell to be water
